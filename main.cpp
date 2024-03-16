@@ -72,9 +72,9 @@ struct CompareByDistance
 
 struct Robot
 {
-    int x, y, goods;
+    int x, y, goods,id;
     int status;
-    int mbx, mby;
+    //int mbx, mby;
     vector<int> codes;
     int step=0;
     int max_step=0;
@@ -85,8 +85,13 @@ struct Robot
         y = startY;
         codes.resize(100);
     }
+
     int select_good()
+    //return good id
+    //assign codes and max_step
+    //set step to 0
     {
+        step=0;
         priority_queue<pair<int,int>,vector<pair<int,int>>,CompareByDistance> pq;
         //pq/first is distance to good and second is good id;
         for(int i=0;i<Goods.size();i++)
@@ -116,6 +121,43 @@ struct Robot
             }
         }
     }
+
+    void poll(int id)
+    //change state
+    //move one step
+    {
+        if(state==free)
+        {
+            int good_id=select_good();
+            step=0;
+            printf("move %d %d\n",id,codes[step]);
+            step++;
+        }
+        else if(state==to_good)
+        {
+            printf("move %d %d\n",id,codes[step]);
+            step++;
+            if(step==max_step)
+            {
+                printf("get %d\n",id);
+                state=to_berth;
+                auto len=findPath({x,y},{berth[0].x,berth[0].y});
+                max_step=len.size();
+                step=0;
+            }
+        }
+        else if(state==to_berth)
+        {
+            printf("move %d %d\n",id,codes[step]);
+            step++;
+            if(step==max_step)
+            {
+                printf("pull %d\n",id);
+                state=free;
+            }
+        }
+    }
+
 }robot[robot_num + 10];
 
 #define field_char '.'
@@ -175,8 +217,9 @@ void log2file(int rob_id,int ber_id)
 }
 */
 
-//vector<pair<int, int>> findPath(vector<vector<int>>& grid, pair<int, int> start, pair<int, int> end)
+
 vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> end)
+//just return path
 {
     vector<pair<int, int>> directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // 上下左右四个方向
 
