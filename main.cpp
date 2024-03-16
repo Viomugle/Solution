@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <iostream>
 #include <queue>
+#include <mutex>
 
 using namespace std;
 //x-> downwards
@@ -12,7 +13,6 @@ using namespace std;
 #define x_minus 2
 #define  y_plus 0
 #define y_minus 1
-
 #define to_good 0
 #define to_berth 1
 #define free 2
@@ -29,6 +29,8 @@ int last_frame=0;
 int current_frame=0;
 int delta_frame=0;
 const int max_ttl=1000;
+
+unique_ptr<fstream> log_p;
 
 vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> end);
 inline int enCode(pair<int,int> cur,pair<int,int> next);
@@ -93,12 +95,18 @@ struct Robot
     {
         step=0;
         priority_queue<pair<int,int>,vector<pair<int,int>>,CompareByDistance> pq;
-        //pq/first is distance to good and second is good id;
+        //pq.first is distance to good and second is good id;
         for(int i=0;i<Goods.size();i++)
         {
             pq.push({abs(Goods[i].x-x)+abs(Goods[i].y-y),i});
         }
         bool needed=true;
+        while(!pq.empty())
+        {
+            *log_p<<pq.top().first<<" for id "<<pq.top().second<<endl;
+            pq.pop();
+        }
+        /*
         while(needed && !pq.empty())
         {
             auto good=pq.top();
@@ -117,21 +125,24 @@ struct Robot
                         codes[max_step-i]=enCode(len[i],len[i-1]);
                     }
                 }
+                Goods.erase(Goods.begin()+good.second);
                 return good.second;
             }
         }
+        return -1;
+        */
     }
 
     void poll(int id)
-    //change state
-    //move one step
     {
         if(state==free)
         {
             int good_id=select_good();
+            *log_p<<"robot: "<<id<<"good_id: "<<good_id<<endl;
             step=0;
             printf("move %d %d\n",id,codes[step]);
             step++;
+            state=to_good;
         }
         else if(state==to_good)
         {
@@ -184,39 +195,6 @@ struct CompareNode {
         return a->f() > b->f();
     }
 };
-
-/*
-void log2file(int rob_id,int ber_id)
-{
-
-    std::fstream file(string("./Demo/log"+to_string(rob_id)+".txt").c_str(), std::ios_base::in|std::ios_base::out);
-    file<<"robot:"<<rob_id<<"("<<robot[rob_id].x<<","<<robot[rob_id].y<<")"<<" to berth: "<<ber_id<<"("<<berth[ber_id].x<<","<<berth[ber_id].y<<")"<<endl;
-    int line=0;
-    int max=20;
-    auto path=findPath({robot[rob_id].x,robot[rob_id].y},{berth[ber_id].x,berth[ber_id].y});
-    file<<path.size()<<"steps in total"<<endl;
-    int codes_size=path.size();
-    int movecodes[codes_size];
-
-    for(int i=path.size()-1;i>=0;i--)
-    {
-        file<<path[i].first<<","<<path[i].second<<"=";
-        if(i>0)
-        {
-            movecodes[i]=enCode(path[i],path[i-1]);
-        }
-        file<<to_string(movecodes[i])<<">";
-        line++;
-        if(line>max)
-        {
-            line=0;
-            file<<endl;
-        }
-    }
-    file.close();
-}
-*/
-
 
 vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> end)
 //just return path
@@ -289,7 +267,6 @@ void Init()
     file<<okk<<std::endl;
     file<<"begin to log"<<endl;
     file.close();
-    //stderr<<"Init"<<endl;
     fflush(stdout);
 }
 
@@ -318,6 +295,7 @@ int Input()
         if(id-g->birth>max_ttl)
         {
             g=Goods.erase(g);
+            g++;
         }
         else
         {
@@ -331,6 +309,7 @@ int Input()
         goodlog<<"("<<g.x<<","<<g.y<<")"<<" val: "<<g.val<<" birth: "<<g.birth<<endl;
     }
     goodlog<<to_string(current_frame)<<endl;
+    goodlog.close();
     return id;
 }
 
@@ -383,17 +362,18 @@ inline int enCode(pair<int,int> cur,pair<int,int> next)
     }
 }
 
-
-
-
 int main()
 {
-    check(0);
-    check(1);
-    check(2);
-    check(3);
-    check("good");
+    log_p=make_unique<fstream>("./Demo/log.txt", std::ios_base::in|std::ios_base::out);
+    if(log_p->good())
+    {
+        *log_p<<"log_p is good"<<endl;
+    }
     Init();
+    for(int j=0;j<robot_num;j++)
+    {
+        robot[j].id=j;
+    }
     for(int zhen = 1; zhen <= 15000; zhen ++)
     {
         last_frame=current_frame;
@@ -401,12 +381,13 @@ int main()
         delta_frame=current_frame-last_frame;
         for(int i = 0; i < robot_num; i++)
         {
-            //log2file(i,i);
+            robot[i].poll(i);
         }
         puts("OK");
         fflush(stdout);
         break;
     }
     cerr<<"end"<<endl;
+    log_p->close();
     return 0;
 }
