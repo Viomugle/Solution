@@ -34,7 +34,7 @@ const int max_ttl = 1000;
 
 unique_ptr<fstream> log_p;
 
-vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> end);
+vector<pair<int, int>> findPPath(pair<int, int> start, pair<int, int> end);
 inline int enCode(pair<int, int> cur, pair<int, int> next);
 struct Berth // 泊位
 {
@@ -266,7 +266,7 @@ vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> end)
             int newX = current->x + dir.first;
             int newY = current->y + dir.second;
 
-            if (newX > 0 && newX <= 201 && newY > 0 && newY <= 201 && !closed[newX][newY] && ch[newX][newY] != sea_char && ch[newX][newY] != block_char)
+            if (newX > 0 && newX <= 200 && newY > 0 && newY <= 200&& !closed[newX][newY] && ch[newX][newY] != sea_char && ch[newX][newY] != block_char)
             {
                 int g = current->g + 1;
                 int h = abs(end.first - newX) + abs(end.second - newY);
