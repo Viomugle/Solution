@@ -34,7 +34,7 @@ const int max_ttl = 1000;
 
 unique_ptr<fstream> log_p;
 
-vector<pair<int, int>> findPPath(pair<int, int> start, pair<int, int> end);
+vector<pair<int, int>> findPath(pair<int, int> start, pair<int, int> end);
 inline int enCode(pair<int, int> cur, pair<int, int> next);
 struct Berth // 泊位
 {
